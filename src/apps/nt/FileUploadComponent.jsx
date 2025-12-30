@@ -84,6 +84,34 @@ const FileUploadComponent = () => {
     }
   };
 
+  const callFleets = async () => {
+     const token = window.sessionStorage.getItem("jwtToken");
+     console.log("####",token);
+     
+    const response = await axios.get(
+      "http://localhost:8080/api/fleetservice/user/get",
+      {
+        headers: {
+          Authorization: "Bearer "+token,
+        },
+      }
+    );
+  };
+
+   const callDevice = async () => {
+     const token = window.sessionStorage.getItem("jwtToken");
+     console.log("####",token);
+     
+    const response = await axios.get(
+      "http://localhost:8080/api/deviceservice/devices",
+      {
+        headers: {
+          Authorization: "Bearer "+token,
+        },
+      }
+    );
+  };
+
   return (
     <div style={{ padding: 20, border: "1px solid #ccc", maxWidth: 450 }}>
       <h2>Vehicle Inspection Image Upload</h2>
@@ -115,6 +143,20 @@ const FileUploadComponent = () => {
       <br />
       <br />
 
+      <button
+        onClick={() => callFleets()}
+       
+        style={{ marginRight: 10 }}
+      >
+        Call Fleet
+      </button> | 
+      <button
+        onClick={() => callDevice()}
+       
+        style={{ marginRight: 10 }}
+      >
+        Call Device
+      </button>
       <button
         onClick={uploadWithFetch}
         disabled={isLoading || !selectedFile}
