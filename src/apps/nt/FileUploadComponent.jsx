@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 const FileUploadComponent = () => {
@@ -88,7 +88,7 @@ const FileUploadComponent = () => {
      const token = window.sessionStorage.getItem("jwtToken");
      console.log("####",token);
      
-    const response = await axios.get(
+    await axios.get(
       "http://localhost:8080/api/fleetservice/user/get",
       {
         headers: {
@@ -102,7 +102,7 @@ const FileUploadComponent = () => {
      const token = window.sessionStorage.getItem("jwtToken");
      console.log("####",token);
      
-    const response = await axios.get(
+    await axios.get(
       "http://localhost:8080/api/deviceservice/devices",
       {
         headers: {
