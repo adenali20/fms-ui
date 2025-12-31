@@ -1,120 +1,185 @@
 import { useState } from "react";
 import "./SignupPage.css";
-import axios from '../../api/axios';
-import { useNavigate } from 'react-router-dom';
+import axios from "../../api/axios";
+import { useNavigate } from "react-router-dom";
+
 const SignupPage = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    role: "DRIVER",
   });
 
+  const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    // clear field error while typing
+    setErrors((prev) => ({
+      ...prev,
+      [e.target.name]: null,
+    }));
   };
-
-
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
+    setMessage("");
 
     if (formData.password !== formData.confirmPassword) {
-      setMessage("Passwords do not match!");
+      setErrors({ confirmPassword: "Passwords do not match" });
       return;
     }
 
-     try {
+    try {
+      setLoading(true);
+
       await axios.post(
-        '/user/signup',
+        "/user/signup",
         {
-          username: formData.name.split("@")[0],
+          name: formData.name,
           email: formData.email,
           password: formData.password,
+          role: formData.role,
         },
         {
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
         }
       );
 
-    //   const userDetails = { username: formData.name };
-      navigate('/nt/login');
-    } catch (error) {
-        setMessage("Signup failed.");
-        console.log('Signup failed', error);
-    }
+      setMessage("🎉 Registration successful! Await admin approval.");
 
+      setTimeout(() => navigate("/nt/login"), 1500);
+    } catch (error) {
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        setMessage("Signup failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="container signup-container">
       <h2>Create Account</h2>
+
       <form className="signup-form" onSubmit={handleSubmit}>
+        {/* Name */}
         <div className="form-group">
-          <label htmlFor="name">Full Name</label>
+          <label>Full Name</label>
           <input
             type="text"
-            id="name"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            required
             placeholder="Enter your name"
           />
+          {errors.name && <span className="error">{errors.name}</span>}
         </div>
 
+        {/* Email */}
         <div className="form-group">
-          <label htmlFor="email">Email Address</label>
+          <label>Email Address</label>
           <input
             type="email"
-            id="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            required
             placeholder="Enter your email"
           />
+          {errors.email && <span className="error">{errors.email}</span>}
         </div>
 
+        {/* Password */}
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label>Password</label>
           <input
             type="password"
-            id="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
-            required
             placeholder="Enter your password"
           />
+          {errors.password && <span className="error">{errors.password}</span>}
         </div>
 
+        {/* Confirm Password */}
         <div className="form-group">
-          <label htmlFor="confirmPassword">Confirm Password</label>
+          <label>Confirm Password</label>
           <input
             type="password"
-            id="confirmPassword"
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
-            required
             placeholder="Confirm your password"
           />
+          {errors.confirmPassword && (
+            <span className="error">{errors.confirmPassword}</span>
+          )}
         </div>
 
-        <button type="submit" className="btn">
-          Sign Up
+        {/* Role */}
+        <div className="form-group">
+          <label>Role</label>
+
+          <div className="radio-group">
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="DRIVER"
+                checked={formData.role === "DRIVER"}
+                onChange={handleChange}
+              />
+              Driver
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="OWNER"
+                checked={formData.role === "OWNER"}
+                onChange={handleChange}
+              />
+              Owner
+            </label>
+
+            {/* Remove ADMIN if public signup should not allow it */}
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="ADMIN"
+                checked={formData.role === "ADMIN"}
+                onChange={handleChange}
+              />
+              Admin
+            </label>
+          </div>
+
+          {errors.role && <span className="error">{errors.role}</span>}
+        </div>
+
+        {/* Submit */}
+        <button type="submit" className="btn" disabled={loading}>
+          {loading ? "Creating account..." : "Sign Up"}
         </button>
 
-        {message && <p className="message">{message}</p>}
+        {/* Success Toast */}
+        {message && <div className="toast success">{message}</div>}
 
         <p className="login-link">
           Already have an account? <a href="/login">Log In</a>
