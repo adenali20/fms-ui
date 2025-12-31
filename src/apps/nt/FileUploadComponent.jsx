@@ -87,7 +87,7 @@ const FileUploadComponent = () => {
   const callFleets = async () => {
      const token = window.sessionStorage.getItem("jwtToken");
     await axios.get(
-      "http://dev.adenali.com:8080/api/fleetservice/user/get",
+      "https://dev.adenali.com/api/fleetservice/user/get",
       {
         headers: {
           Authorization: "Bearer "+token,
@@ -99,7 +99,7 @@ const FileUploadComponent = () => {
    const callDevice = async () => {
      const token = window.sessionStorage.getItem("jwtToken");
     await axios.get(
-      "http://dev.adenali.com:8080/api/deviceservice/devices",
+      "https://dev.adenali.com/api/deviceservice/devices",
       {
         headers: {
           Authorization: "Bearer "+token,
