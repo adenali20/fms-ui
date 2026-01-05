@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import axios from '../../api/axios';
+import axios from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginStart, loginSuccess, loginFailure } from '../../redux/reducers/userSlice';
+import { loginStart, loginSuccess, loginFailure } from '../redux/reducers/userSlice';
 import './Login.css'; 
 
 const Login = () => {
