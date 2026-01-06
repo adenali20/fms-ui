@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
 const API_BASE = "http://localhost:8080/api/fleetservice";
@@ -15,22 +15,25 @@ export default function FleetManager() {
 
   const token = window.sessionStorage.getItem("jwtToken");
 
-  // Fetch fleets for owner
-  const fetchFleets = () => {
+  // Fetch fleets for owner (useCallback to avoid useEffect warning)
+  const fetchFleets = useCallback(async () => {
     if (!ownerId) return;
     setLoading(true);
-    axios
-      .get(`${API_BASE}/owners/${ownerId}/fleets`, {
+    try {
+      const res = await axios.get(`${API_BASE}/owners/${ownerId}/fleets`, {
         headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setFleets(res.data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  };
+      });
+      setFleets(res.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [ownerId, token]);
 
   useEffect(() => {
     fetchFleets();
-  }, [ownerId, token]);
+  }, [fetchFleets]);
 
   // Dynamic attribute helpers
   const addAttribute = () => setAttributes([...attributes, { key: "", value: "" }]);
