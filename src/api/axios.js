@@ -9,7 +9,7 @@ const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
 // For localhost, replace the port with 8050.
 // For deployed (non-local) environments, just use the same origin.
 const base = isLocalhost
-  ? `http://localhost:8080/api/authservice`
+  ? `http://10.0.0.167:8080/api/authservice`
   : `https://dev.adenali.com/api/authservice`;
 
 const axiosInstance = axios.create({
