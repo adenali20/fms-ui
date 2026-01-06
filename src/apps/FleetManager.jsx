@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-const API_BASE = "http://dev.adenali.com:8080/api/fleetservice";
+const API_BASE = "http://dev.adenali.com/api/fleetservice";
 
 export default function FleetManager() {
   const [ownerEmail, setOwnerEmail] = useState("");
