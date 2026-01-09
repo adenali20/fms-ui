@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import axios from '../api/axios';
+import axios from "../api/axios";
+
+/* ------------------ GraphQL Helper ------------------ */
+
 const graphqlRequest = async (query, variables = {}) => {
   const token = sessionStorage.getItem("jwtToken");
 
   const response = await axios.post(
-    "/api/fleetservice/graphql", // or "/api/fleetservice/graphql"
-    {
-      query,
-      variables
-    },
+    "/api/fleetservice/graphql",
+    { query, variables },
     {
       headers: {
         "Content-Type": "application/json",
@@ -16,6 +16,7 @@ const graphqlRequest = async (query, variables = {}) => {
       }
     }
   );
+
   if (response.data.errors) {
     console.error(response.data.errors);
     throw new Error("GraphQL error");
@@ -24,16 +25,18 @@ const graphqlRequest = async (query, variables = {}) => {
   return response.data.data;
 };
 
+/* ------------------ Component ------------------ */
+
 export default function FleetManager() {
+  const PAGE_SIZE = 5;
+
   const [fleets, setFleets] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [endCursor, setEndCursor] = useState(null);
+  const [hasNextPage, setHasNextPage] = useState(true);
 
   const [fleetForm, setFleetForm] = useState({
-    type: "CAR",
     name: "",
-    model: "",
-    year: 2024,
-    brand: "",
     plate: ""
   });
 
@@ -43,34 +46,57 @@ export default function FleetManager() {
     number: ""
   });
 
-  // ---------------------------
-  // Fetch Fleets
-  // ---------------------------
-  const loadFleets = async () => {
+  /* ------------------ Fetch Fleets (Paginated) ------------------ */
+
+  const loadFleets = async (loadMore = false) => {
+    if (loading) return;
+
     setLoading(true);
     try {
-      const data = await graphqlRequest(`
-        query {
-          fleets {
-            id
-            name
-            plate
+      const data = await graphqlRequest(
+        `
+        query Fleets($after: String, $size: Int!) {
+          fleetsWithPagination(after: $after, size: $size) {
+            edges {
+              cursor
+              node {
+                id
+                name
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
           }
         }
-      `);
-      setFleets(data.fleets);
+        `,
+        {
+          after: loadMore ? endCursor : null,
+          size: PAGE_SIZE
+        }
+      );
+
+      const connection = data.fleetsWithPagination;
+      const newFleets = connection.edges.map(e => e.node);
+
+      setFleets(prev =>
+        loadMore ? [...prev, ...newFleets] : newFleets
+      );
+
+      setEndCursor(connection.pageInfo.endCursor);
+      setHasNextPage(connection.pageInfo.hasNextPage);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadFleets();
+    loadFleets(false);
   }, []);
 
-  // ---------------------------
-  // Create Fleet
-  // ---------------------------
+  /* ------------------ Create Fleet ------------------ */
+
   const handleCreateFleet = async () => {
     await graphqlRequest(
       `
@@ -80,17 +106,19 @@ export default function FleetManager() {
           name
         }
       }
-    `,
+      `,
       { input: fleetForm }
     );
 
-    setFleetForm({ ...fleetForm, name: "", plate: "" });
-    loadFleets();
+    setFleetForm({ name: "", plate: "" });
+
+    // Reload from first page
+    setEndCursor(null);
+    loadFleets(false);
   };
 
-  // ---------------------------
-  // Attach Device
-  // ---------------------------
+  /* ------------------ Attach Device ------------------ */
+
   const handleAttachDevice = async () => {
     await graphqlRequest(
       `
@@ -101,37 +129,39 @@ export default function FleetManager() {
           fleetId
         }
       }
-    `,
+      `,
       { input: deviceForm }
     );
 
-    setDeviceForm({ ...deviceForm, name: "", number: "" });
+    setDeviceForm({ fleetId: "", name: "", number: "" });
   };
 
-  if (loading) return <p>Loading fleets...</p>;
+  /* ------------------ UI ------------------ */
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "1rem" }}>
-        Fleet & Device Manager
-      </h1>
+    <div style={container}>
+      <h1 style={title}>Fleet & Device Manager</h1>
 
       {/* Create Fleet */}
-      <div style={cardStyle}>
+      <div style={card}>
         <h2>Create Fleet</h2>
 
         <input
           placeholder="Fleet name"
           value={fleetForm.name}
-          onChange={(e) => setFleetForm({ ...fleetForm, name: e.target.value })}
-          style={inputStyle}
+          onChange={(e) =>
+            setFleetForm({ ...fleetForm, name: e.target.value })
+          }
+          style={input}
         />
 
         <input
           placeholder="Plate"
           value={fleetForm.plate}
-          onChange={(e) => setFleetForm({ ...fleetForm, plate: e.target.value })}
-          style={inputStyle}
+          onChange={(e) =>
+            setFleetForm({ ...fleetForm, plate: e.target.value })
+          }
+          style={input}
         />
 
         <button onClick={handleCreateFleet} style={primaryBtn}>
@@ -140,28 +170,34 @@ export default function FleetManager() {
       </div>
 
       {/* Attach Device */}
-      <div style={cardStyle}>
+      <div style={card}>
         <h2>Attach Device</h2>
 
         <input
           placeholder="Fleet ID"
           value={deviceForm.fleetId}
-          onChange={(e) => setDeviceForm({ ...deviceForm, fleetId: e.target.value })}
-          style={inputStyle}
+          onChange={(e) =>
+            setDeviceForm({ ...deviceForm, fleetId: e.target.value })
+          }
+          style={input}
         />
 
         <input
           placeholder="Device name"
           value={deviceForm.name}
-          onChange={(e) => setDeviceForm({ ...deviceForm, name: e.target.value })}
-          style={inputStyle}
+          onChange={(e) =>
+            setDeviceForm({ ...deviceForm, name: e.target.value })
+          }
+          style={input}
         />
 
         <input
           placeholder="Phone number"
           value={deviceForm.number}
-          onChange={(e) => setDeviceForm({ ...deviceForm, number: e.target.value })}
-          style={inputStyle}
+          onChange={(e) =>
+            setDeviceForm({ ...deviceForm, number: e.target.value })
+          }
+          style={input}
         />
 
         <button onClick={handleAttachDevice} style={successBtn}>
@@ -170,18 +206,25 @@ export default function FleetManager() {
       </div>
 
       {/* Fleets List */}
-      <div style={cardStyle}>
+      <div style={card}>
         <h2>Existing Fleets</h2>
+
         {fleets.map((fleet) => (
-          <div key={fleet.id} style={rowStyle}>
-            <span>
-              {fleet.name} ({fleet.plate})
-            </span>
-            <span style={{ fontSize: "0.8rem", color: "#666" }}>
-              {fleet.id}
-            </span>
+          <div key={fleet.id} style={row}>
+            <span>{fleet.name}</span>
+            <span style={muted}>{fleet.id}</span>
           </div>
         ))}
+
+        {hasNextPage && (
+          <button
+            onClick={() => loadFleets(true)}
+            disabled={loading}
+            style={loadMoreBtn}
+          >
+            {loading ? "Loading..." : "Load More"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -189,14 +232,27 @@ export default function FleetManager() {
 
 /* ------------------ Styles ------------------ */
 
-const cardStyle = {
-  border: "1px solid #ccc",
+const container = {
+  padding: "2rem",
+  maxWidth: "800px",
+  margin: "0 auto",
+  fontFamily: "Arial, sans-serif"
+};
+
+const title = {
+  fontSize: "1.8rem",
+  fontWeight: "bold",
+  marginBottom: "1rem"
+};
+
+const card = {
+  border: "1px solid #ddd",
   borderRadius: "8px",
   padding: "1rem",
   marginBottom: "1rem"
 };
 
-const inputStyle = {
+const input = {
   padding: "0.5rem",
   marginBottom: "0.5rem",
   width: "100%",
@@ -218,9 +274,21 @@ const successBtn = {
   backgroundColor: "#16a34a"
 };
 
-const rowStyle = {
+const loadMoreBtn = {
+  ...primaryBtn,
+  width: "100%",
+  marginTop: "1rem",
+  backgroundColor: "#0ea5e9"
+};
+
+const row = {
   display: "flex",
   justifyContent: "space-between",
   padding: "0.5rem 0",
   borderBottom: "1px solid #eee"
+};
+
+const muted = {
+  fontSize: "0.8rem",
+  color: "#666"
 };
