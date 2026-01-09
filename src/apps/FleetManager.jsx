@@ -4,7 +4,7 @@ const graphqlRequest = async (query, variables = {}) => {
   const token = sessionStorage.getItem("jwtToken");
 
   const response = await axios.post(
-    "/graphql", // or "/api/fleetservice/graphql"
+    "/api/fleetservice/graphql", // or "/api/fleetservice/graphql"
     {
       query,
       variables
