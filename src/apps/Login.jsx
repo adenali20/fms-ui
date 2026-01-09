@@ -24,7 +24,7 @@ const handleSubmit = async (e) => {
 
   try {
     const response = await axios.post(
-      "/user/login",
+      "api/authservice/user/login",
       { username: credentials.username, password: credentials.password },
       { headers: { "Content-Type": "application/json" } }
     );

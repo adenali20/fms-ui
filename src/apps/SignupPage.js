@@ -45,7 +45,7 @@ const SignupPage = () => {
       setLoading(true);
 
       await axios.post(
-        "/user/signup",
+        "api/authservice/user/signup",
         {
           name: formData.name,
           email: formData.email,
