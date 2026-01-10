@@ -36,57 +36,40 @@ export default function FleetManager() {
   const [endCursor, setEndCursor] = useState(null);
   const [hasNextPage, setHasNextPage] = useState(true);
 
-  const [fleetForm, setFleetForm] = useState({
-    name: "",
-    plate: ""
-  });
+  /* ---------- Modals ---------- */
+  const [showFleetModal, setShowFleetModal] = useState(false);
+  const [showDeviceModal, setShowDeviceModal] = useState(false);
 
-  const [deviceForm, setDeviceForm] = useState({
-    fleetId: "",
-    name: "",
-    number: ""
-  });
+  const [fleetForm, setFleetForm] = useState({ name: "", plate: "" });
+  const [deviceForm, setDeviceForm] = useState({ fleetId: "", name: "", number: "" });
 
-  /* ------------------ Fetch Fleets (Paginated) ------------------ */
+  /* ------------------ Fetch Fleets ------------------ */
 
   const loadFleets = async (loadMore = false) => {
     if (loading) return;
-
     setLoading(true);
+
     try {
       const data = await graphqlRequest(
         `
         query Fleets($after: String, $size: Int!) {
           fleetsWithPagination(after: $after, size: $size) {
             edges {
-              cursor
-              node {
-                id
-                name
-              }
+              node { id name plate }
             }
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
+            pageInfo { hasNextPage endCursor }
           }
         }
         `,
-        {
-          after: loadMore ? endCursor : null,
-          size: PAGE_SIZE
-        }
+        { after: loadMore ? endCursor : null, size: PAGE_SIZE }
       );
 
-      const connection = data.fleetsWithPagination;
-      const newFleets = connection.edges.map(e => e.node);
+      const conn = data.fleetsWithPagination;
+      const newFleets = conn.edges.map(e => e.node);
 
-      setFleets(prev =>
-        loadMore ? [...prev, ...newFleets] : newFleets
-      );
-
-      setEndCursor(connection.pageInfo.endCursor);
-      setHasNextPage(connection.pageInfo.hasNextPage);
+      setFleets(prev => (loadMore ? [...prev, ...newFleets] : newFleets));
+      setEndCursor(conn.pageInfo.endCursor);
+      setHasNextPage(conn.pageInfo.hasNextPage);
     } finally {
       setLoading(false);
     }
@@ -96,45 +79,28 @@ export default function FleetManager() {
     loadFleets(false);
   }, []);
 
-  /* ------------------ Create Fleet ------------------ */
+  /* ------------------ Mutations ------------------ */
 
   const handleCreateFleet = async () => {
     await graphqlRequest(
-      `
-      mutation ($input: CreateFleetInput!) {
-        createFleet(input: $input) {
-          id
-          name
-        }
-      }
-      `,
+      `mutation ($input: CreateFleetInput!) { createFleet(input: $input) { id } }`,
       { input: fleetForm }
     );
 
     setFleetForm({ name: "", plate: "" });
-
-    // Reload from first page
+    setShowFleetModal(false);
     setEndCursor(null);
     loadFleets(false);
   };
 
-  /* ------------------ Attach Device ------------------ */
-
   const handleAttachDevice = async () => {
     await graphqlRequest(
-      `
-      mutation ($input: CreateDeviceInput!) {
-        attachDevice(input: $input) {
-          id
-          name
-          fleetId
-        }
-      }
-      `,
+      `mutation ($input: CreateDeviceInput!) { attachDevice(input: $input) { id } }`,
       { input: deviceForm }
     );
 
     setDeviceForm({ fleetId: "", name: "", number: "" });
+    setShowDeviceModal(false);
   };
 
   /* ------------------ UI ------------------ */
@@ -143,89 +109,64 @@ export default function FleetManager() {
     <div style={container}>
       <h1 style={title}>Fleet & Device Manager</h1>
 
-      {/* Create Fleet */}
-      <div style={card}>
-        <h2>Create Fleet</h2>
-
-        <input
-          placeholder="Fleet name"
-          value={fleetForm.name}
-          onChange={(e) =>
-            setFleetForm({ ...fleetForm, name: e.target.value })
-          }
-          style={input}
-        />
-
-        <input
-          placeholder="Plate"
-          value={fleetForm.plate}
-          onChange={(e) =>
-            setFleetForm({ ...fleetForm, plate: e.target.value })
-          }
-          style={input}
-        />
-
-        <button onClick={handleCreateFleet} style={primaryBtn}>
-          Create Fleet
-        </button>
-      </div>
-
-      {/* Attach Device */}
-      <div style={card}>
-        <h2>Attach Device</h2>
-
-        <input
-          placeholder="Fleet ID"
-          value={deviceForm.fleetId}
-          onChange={(e) =>
-            setDeviceForm({ ...deviceForm, fleetId: e.target.value })
-          }
-          style={input}
-        />
-
-        <input
-          placeholder="Device name"
-          value={deviceForm.name}
-          onChange={(e) =>
-            setDeviceForm({ ...deviceForm, name: e.target.value })
-          }
-          style={input}
-        />
-
-        <input
-          placeholder="Phone number"
-          value={deviceForm.number}
-          onChange={(e) =>
-            setDeviceForm({ ...deviceForm, number: e.target.value })
-          }
-          style={input}
-        />
-
-        <button onClick={handleAttachDevice} style={successBtn}>
-          Attach Device
-        </button>
+      <div style={actions}>
+        <button style={primaryBtn} onClick={() => setShowFleetModal(true)}>+ Add Fleet</button>
+        <button style={successBtn} onClick={() => setShowDeviceModal(true)}>+ Attach Device</button>
       </div>
 
       {/* Fleets List */}
       <div style={card}>
         <h2>Existing Fleets</h2>
-
-        {fleets.map((fleet) => (
-          <div key={fleet.id} style={row}>
-            <span>{fleet.name}</span>
-            <span style={muted}>{fleet.id}</span>
+        {fleets.map(f => (
+          <div key={f.id} style={row}>
+            <span>{f.name}</span>
+            <span style={muted}>{f.id}</span>
           </div>
         ))}
 
         {hasNextPage && (
-          <button
-            onClick={() => loadFleets(true)}
-            disabled={loading}
-            style={loadMoreBtn}
-          >
+          <button style={loadMoreBtn} disabled={loading} onClick={() => loadFleets(true)}>
             {loading ? "Loading..." : "Load More"}
           </button>
         )}
+      </div>
+
+      {/* Fleet Modal */}
+      {showFleetModal && (
+        <Modal title="Create Fleet" onClose={() => setShowFleetModal(false)}>
+          <input style={input} placeholder="Fleet name" value={fleetForm.name}
+            onChange={e => setFleetForm({ ...fleetForm, name: e.target.value })} />
+          <input style={input} placeholder="Plate" value={fleetForm.plate}
+            onChange={e => setFleetForm({ ...fleetForm, plate: e.target.value })} />
+          <button style={primaryBtn} onClick={handleCreateFleet}>Create</button>
+        </Modal>
+      )}
+
+      {/* Device Modal */}
+      {showDeviceModal && (
+        <Modal title="Attach Device" onClose={() => setShowDeviceModal(false)}>
+          <input style={input} placeholder="Fleet ID" value={deviceForm.fleetId}
+            onChange={e => setDeviceForm({ ...deviceForm, fleetId: e.target.value })} />
+          <input style={input} placeholder="Device name" value={deviceForm.name}
+            onChange={e => setDeviceForm({ ...deviceForm, name: e.target.value })} />
+          <input style={input} placeholder="Phone number" value={deviceForm.number}
+            onChange={e => setDeviceForm({ ...deviceForm, number: e.target.value })} />
+          <button style={successBtn} onClick={handleAttachDevice}>Attach</button>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ------------------ Modal ------------------ */
+
+function Modal({ title, children, onClose }) {
+  return (
+    <div style={overlay}>
+      <div style={modal}>
+        <h2>{title}</h2>
+        {children}
+        <button style={closeBtn} onClick={onClose}>Close</button>
       </div>
     </div>
   );
@@ -233,63 +174,25 @@ export default function FleetManager() {
 
 /* ------------------ Styles ------------------ */
 
-const container = {
-  padding: "2rem",
-  maxWidth: "800px",
-  margin: "0 auto",
-  fontFamily: "Arial, sans-serif"
+const container = { maxWidth: 800, margin: "2rem auto", fontFamily: "Arial" };
+const title = { fontSize: "1.8rem", marginBottom: "1rem" };
+const actions = { display: "flex", gap: "1rem", marginBottom: "1rem" };
+const card = { border: "1px solid #ddd", borderRadius: 8, padding: "1rem" };
+const row = { display: "flex", justifyContent: "space-between", padding: "0.5rem 0" };
+const muted = { fontSize: "0.8rem", color: "#666" };
+
+const input = { width: "100%", padding: "0.5rem", marginBottom: "0.5rem" };
+
+const primaryBtn = { padding: "0.5rem 1rem", background: "#4f46e5", color: "#fff", border: 0 };
+const successBtn = { ...primaryBtn, background: "#16a34a" };
+const loadMoreBtn = { ...primaryBtn, width: "100%", marginTop: "1rem", background: "#0ea5e9" };
+const closeBtn = { marginTop: "1rem" };
+
+const overlay = {
+  position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+  display: "flex", alignItems: "center", justifyContent: "center"
 };
 
-const title = {
-  fontSize: "1.8rem",
-  fontWeight: "bold",
-  marginBottom: "1rem"
-};
-
-const card = {
-  border: "1px solid #ddd",
-  borderRadius: "8px",
-  padding: "1rem",
-  marginBottom: "1rem"
-};
-
-const input = {
-  padding: "0.5rem",
-  marginBottom: "0.5rem",
-  width: "100%",
-  borderRadius: "4px",
-  border: "1px solid #ccc"
-};
-
-const primaryBtn = {
-  padding: "0.5rem 1rem",
-  backgroundColor: "#4f46e5",
-  color: "white",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer"
-};
-
-const successBtn = {
-  ...primaryBtn,
-  backgroundColor: "#16a34a"
-};
-
-const loadMoreBtn = {
-  ...primaryBtn,
-  width: "100%",
-  marginTop: "1rem",
-  backgroundColor: "#0ea5e9"
-};
-
-const row = {
-  display: "flex",
-  justifyContent: "space-between",
-  padding: "0.5rem 0",
-  borderBottom: "1px solid #eee"
-};
-
-const muted = {
-  fontSize: "0.8rem",
-  color: "#666"
+const modal = {
+  background: "white", padding: "1.5rem", borderRadius: 8, width: 400
 };
