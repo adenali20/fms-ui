@@ -1,13 +1,13 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from "react-router-dom";
+import Navbar from "./Navbar";
 
-const Layout = () => {
+export default function Layout() {
   return (
-    <>
-      <main style={{ padding: '1rem' }}>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Navbar />
+      <main className="flex-1 p-6">
         <Outlet />
       </main>
-    </>
+    </div>
   );
-};
-
-export default Layout;
+}
