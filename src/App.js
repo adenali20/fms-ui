@@ -2,30 +2,30 @@
 // App.js updated with Fleets route
 // ============================
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import NtPrivateRoute from "./routes/NtPrivateRoute";
+import PrivateRoute from "./routes/PrivateRoute";
 
-import NtLayout from "./apps/Layout";
-import NtLogin from "./apps/Login";
-import NtSignup from "./apps/SignupPage";
-import NtFriends from "./apps/Home";
-import FleetManager from "./apps/FleetManager"; // <-- Fleet page import
+import Layout from "./components/Layout";
+import Login from "./components/Login";
+import Signup from "./components/SignupPage";
+import Home from "./components/Home";
+import FleetManager from "./components/FleetManager"; // <-- Fleet page import
 
 const App = () => {
   return (
     <Router>
       <Routes>
         {/* --- AUTH --- */}
-        <Route path="/nt/login" element={<NtLogin />} />
-        <Route path="/nt/register" element={<NtSignup />} />
+        <Route path="/nt/login" element={<Login />} />
+        <Route path="/nt/register" element={<Signup />} />
 
-        <Route element={<NtPrivateRoute app="chat" />}>
+        <Route element={<PrivateRoute app="chat" />}>
           {/* --- MAIN LAYOUT --- */}
-          <Route path="/nt" element={<NtLayout />}>
-            <Route index element={<NtFriends />} />
+          <Route path="/nt" element={<Layout />}>
+            <Route index element={<Home />} />
             <Route path="fleets" element={<FleetManager ownerId="OWNER_ID_HERE" />} /> {/* Fleet route */}
           </Route>
-          <Route path="/" element={<NtLayout />}>
-            <Route index element={<NtFriends />} />
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
           </Route>
         </Route>
       </Routes>
