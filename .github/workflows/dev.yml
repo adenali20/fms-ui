@@ -55,7 +55,7 @@ jobs:
       # 8️⃣ Deploy to Kubernetes using Helm
       - name: Helm upgrade fms-ui (dev)
         run: |
-          helm upgrade --install fms-ui ./helm \
+          helm upgrade --install fms-ui ./fms-ui-chart \
             --namespace dev \
             --create-namespace \
             --set image.repository=adenli/fms-ui \
