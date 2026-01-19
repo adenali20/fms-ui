@@ -1,0 +1,15 @@
+replicaCount: 1
+
+image:
+  repository: adenli/fms-ui
+  tag: dev-latest
+  pullPolicy: IfNotPresent
+
+containerPort: 3000
+
+service:
+  type: LoadBalancer
+  port: 3000
+
+env:
+  REACT_APP_GATEWAY_URL: "http://gateway-service-gateway-dev:8080"

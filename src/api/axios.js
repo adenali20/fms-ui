@@ -11,8 +11,8 @@ const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
 
 
 const base = isLocalhost
-  ? `http://localhost:8080/`
-  : `https://dev.adenali.com/`;
+  ? `http://157.230.200.224:8080/`
+  : `http://157.230.200.224:8080/`;
 console.log(base,"<<<<<");
 const axiosInstance = axios.create({
   baseURL: base,
